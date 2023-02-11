@@ -23,6 +23,7 @@ class _Help:
   seed       = 'seed string to generate account, use random value if absent'
   vcn        = 'virtual chain number, 0~65535 or None when absent'
   password   = 'password for the account'
+  password2  = 'passphrase, empty string for no protecting'
 
 def load_config(cfg_file):
   if os.path.isfile(cfg_file):
@@ -41,7 +42,7 @@ def account_list(figerprint):
   cfg = load_config(cfg_file)
   accounts = cfg.get('accounts',{})
   if not accounts:
-    print('No account found, you can use "nbc account generate" to create one.\n')
+    print('No account found, please uses "generate" command to create one first.\n')
     return
   
   if figerprint:   # only list one account
@@ -49,10 +50,14 @@ def account_list(figerprint):
     if acc:
       encrypted = 1 if acc.get('encrypted',False) else 0
       pubkey = acc.get('pubkey','')
-      print('Figerprint: %s' % (figerprint,))
-      print('VCN       : %s' % (acc.get('vcn',None),))
-      print('Encrypted : %s' % (encrypted,))
-      print('Public key: %s' % (pubkey,))
+      prvkey = acc.get('prvkey','')
+      prvkey = '****' if prvkey else 'none'
+      
+      print('Figerprint : %s' % (figerprint,))
+      print('VCN        : %s' % (acc.get('vcn',None),))
+      print('Encrypted  : %s' % (encrypted,))
+      print('Private key: %s' % (prvkey,))
+      print('Public key : %s' % (pubkey,))
     else: print('Can not find account: %s' % (figerprint,))
     
     print()
@@ -67,7 +72,9 @@ def account_list(figerprint):
     encrypted = 1 if v.get('encrypted',False) else 0
     vcn = v.get('vcn',None)
     pubkey = v.get('pubkey','')
-    print('  fp=%s, vcn=%s, encrypted=%s, pubkey=%s' % (k,vcn,encrypted,pubkey[:8]+'...'+pubkey[-8:]))
+    prvkey = v.get('prvkey','')
+    prvkey = '****' if prvkey else 'none'
+    print('  fp=%s, vcn=%s, encrypted=%s, prvkey=%s, pubkey=%s' % (k,vcn,encrypted,prvkey,pubkey[:8]+'...'+pubkey[-8:]))
   print()
 
 def save_cfg_file(cfg_file, cfg):
@@ -95,7 +102,7 @@ def setdefault(figerprint):
 
 @cmd_line.command()
 @click.option('--seed',default='',help=_Help.seed)
-@click.option('--password','-p',help='passphrase, empty string for no protecting')
+@click.option('--password','-p',help=_Help.password2)
 @click.option('--vcn',type=click.INT,default=65536,help=_Help.vcn)
 def generate(seed, password, vcn):
   if password is None:
@@ -148,6 +155,68 @@ def delete(figerprint):
   else: cfg['default'] = ''
   save_cfg_file(cfg_file,cfg)
   print('delete account (%s) successful.\n' % (figerprint,))
+
+@cmd_line.command(name='export')
+@click.option('--figerprint','-fp',help=_Help.figerprint)
+@click.option('--with_private',default=False,is_flag=True,help='include private key, be careful!')
+@click.option('--password','-p',help=_Help.password)
+def account_export(figerprint, with_private, password):
+  cfg_file = os.path.join(_data_dir,'config.json')
+  cfg = load_config(cfg_file)
+  
+  accounts = cfg.get('accounts',{})
+  acc_item = accounts.get(figerprint,None)
+  if not acc_item:
+    print('no account (%s).\n' % (figerprint,))
+    return
+  elif acc_item.get('type') != 'HD':
+    print('only support HD account.\n')
+    return
+  
+  if acc_item.get('encrypted'):
+    if not password:
+      password = getpass.getpass('input password:')
+      if not password: return
+  else: password = ''
+  
+  acc = wallet.loadFrom(cfg,password,figerprint)
+  if acc.publicKey().hex() != acc_item.get('pubkey'):
+    print('error: incorrect password!\n')
+    return
+  
+  print(acc.to_extended_key(include_prv=with_private))
+
+@cmd_line.command(name='import')
+@click.option('--password','-p',help=_Help.password2)
+@click.option('--vcn',type=click.INT,default=65536,help=_Help.vcn)
+@click.argument('keycode',nargs=1)
+def account_import(password, vcn, keycode):
+  if password is None:
+    password = getpass.getpass('input password:')
+    if password:
+      password2 = getpass.getpass('input again:')
+      if password != password2:
+        print('error: the second input is not same to previous!\n')
+        return
+  if not password: password = ''
+  
+  cfg_file = os.path.join(_data_dir,'config.json')
+  cfg = load_config(cfg_file)
+  
+  if vcn >= 65536: vcn = None
+  acc = wallet.HDWallet.from_extended_key(keycode,vcn)
+  
+  hex_pubkey = acc.publicKey().hex()
+  same_count = [1 for item in cfg.get('accounts',{}).values() if item['pubkey'] == hex_pubkey]
+  if same_count:
+    print('same account already exists, overwrite it?')
+    if input('Yes or No (Y/N): ').strip().upper() != 'Y':
+      print('overwrite ignored!\n')
+      return
+  
+  print('generate account successful\n')
+  wallet.saveTo(cfg_file,acc,passphrase=password,cfg=cfg)
+
 
 if __name__ == '__main__':
   if sys.flags.interactive:

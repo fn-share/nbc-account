@@ -170,7 +170,7 @@ class HDWallet(object):
     
     ekdata = b''.join([version, depth, parentfp, childnum, chaincode, data])
     checksum = hashlib.sha256(hashlib.sha256(ekdata).digest()).digest()[:4]
-    return base58.b58encode(ekdata + checksum)
+    return base58.b58encode(ekdata + checksum).decode('utf-8')
   
   def point(self):
     if not self._pubkey:
