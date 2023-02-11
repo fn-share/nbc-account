@@ -226,4 +226,4 @@ if __name__ == '__main__':
   else:
     cmd_line()
 
-# usage: LOCAL_DIR='./data' python3 account.py --help
+# usage: LOCAL_DIR=./data python3 account.py --help
