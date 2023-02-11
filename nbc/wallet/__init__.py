@@ -10,7 +10,7 @@ __all__ = ['Address', 'HDWallet', 'loadFrom', 'saveTo']
 
 def saveTo(fileName, wallet, passphrase='', cfg=None):
   cfg = wallet.dump_to_cfg(passphrase,cfg)  # save current account and set current figerprint to cfg['default']
-  sCfg = json.dumps(cfg)
+  sCfg = json.dumps(cfg,indent=2)
   with open(fileName,'w') as f:
     f.write(sCfg)
 
@@ -19,7 +19,7 @@ def loadFrom(fileName, passphrase=''):
     cfg = json.loads(f.read())
     fp = cfg.get('default',None)
     if fp is None:
-      b = [(item['time'],item['figerprint']) for item in cfg['accounts'].items()]
+      b = [(v['time'],k) for k,v in cfg['accounts'].items()]
       if b: fp = sorted(b)[-1][1]  # try last created one
     
     account = None

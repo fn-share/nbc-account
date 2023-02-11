@@ -9,7 +9,7 @@ os.makedirs(_data_dir,exist_ok=True)
 
 #----
 
-import time, struct, traceback
+import time, struct, json, traceback
 from binascii import hexlify, unhexlify
 
 from nbc import util as nbc_util
@@ -18,9 +18,136 @@ from nbc import wallet
 import getpass, shutil, click
 from binascii import hexlify, unhexlify
 
+class _Help:
+  figerprint = 'figerprint of account'
+  seed       = 'seed string to generate account, use random value if absent'
+  vcn        = 'virtual chain number, 0~65535 or None when absent'
+  password   = 'password for the account'
+
+def load_config(cfg_file):
+  if os.path.isfile(cfg_file):
+    with open(cfg_file,'r') as f:
+      return json.load(f)
+  else: return {}
+
 @click.group()
 def cmd_line():
   pass
+
+@cmd_line.command(name='list')
+@click.option('--figerprint','-fp',default='',help=_Help.figerprint)
+def account_list(figerprint):
+  cfg_file = os.path.join(_data_dir,'config.json')
+  cfg = load_config(cfg_file)
+  accounts = cfg.get('accounts',{})
+  if not accounts:
+    print('No account found, you can use "nbc account generate" to create one.\n')
+    return
+  
+  if figerprint:   # only list one account
+    acc = accounts.get(figerprint)
+    if acc:
+      encrypted = 1 if acc.get('encrypted',False) else 0
+      pubkey = acc.get('pubkey','')
+      print('Figerprint: %s' % (figerprint,))
+      print('VCN       : %s' % (acc.get('vcn',None),))
+      print('Encrypted : %s' % (encrypted,))
+      print('Public key: %s' % (pubkey,))
+    else: print('Can not find account: %s' % (figerprint,))
+    
+    print()
+    return
+  
+  default_fp = cfg.get('default','')
+  print('Default account: %s' % (default_fp or '',))
+  kv = list(accounts.items())
+  print('Total %i account(s):' % len(kv))
+  
+  for k,v in kv:
+    encrypted = 1 if v.get('encrypted',False) else 0
+    vcn = v.get('vcn',None)
+    pubkey = v.get('pubkey','')
+    print('  fp=%s, vcn=%s, encrypted=%s, pubkey=%s' % (k,vcn,encrypted,pubkey[:8]+'...'+pubkey[-8:]))
+  print()
+
+def save_cfg_file(cfg_file, cfg):
+  with open(cfg_file,'w') as f:
+    s = json.dumps(cfg,indent=2)
+    f.write(s)
+
+@cmd_line.command()
+@click.option('--figerprint','-fp',help=_Help.figerprint)
+def setdefault(figerprint):
+  if not figerprint:
+    figerprint = input('input figerprint:').strip().lower()
+    if not figerprint: return
+  
+  cfg_file = os.path.join(_data_dir,'config.json')
+  cfg = load_config(cfg_file)
+  accounts = cfg.get('accounts',{})
+  if figerprint not in accounts:
+    print('failed: can not find account (%s)!\n' % (figerprint,))
+    return
+  
+  cfg['default'] = figerprint
+  save_cfg_file(cfg_file,cfg)
+  print('set default account (%s) successful.\n' % (figerprint,))
+
+@cmd_line.command()
+@click.option('--seed',default='',help=_Help.seed)
+@click.option('--password','-p',help='passphrase, empty string for no protecting')
+@click.option('--vcn',type=click.INT,default=65536,help=_Help.vcn)
+def generate(seed, password, vcn):
+  if password is None:
+    password = getpass.getpass('input password:')
+    if password:
+      password2 = getpass.getpass('input again:')
+      if password != password2:
+        print('error: the second input is not same to previous!\n')
+        return
+  if not password: password = ''
+  
+  cfg_file = os.path.join(_data_dir,'config.json')
+  cfg = load_config(cfg_file)
+  
+  if not seed:
+    seed = os.urandom(32)       # generate account by random seed
+  else: seed = seed.encode('utf-8')
+  if vcn < 0 or vcn >= 65535: vcn = None
+  
+  acc = wallet.HDWallet.from_master_seed(seed,vcn)
+  hex_pubkey = acc.publicKey().hex()
+  same_count = [1 for item in cfg.get('accounts',{}).values() if item['pubkey'] == hex_pubkey]
+  if same_count:
+    print('same account already exists, overwrite it?')
+    if input('Yes or No (Y/N): ').strip().upper() != 'Y':
+      print('overwrite ignored!\n')
+      return
+  
+  print('generate account successful\n')
+  wallet.saveTo(cfg_file,acc,passphrase=password,cfg=cfg)
+
+@cmd_line.command()
+@click.option('--figerprint','-fp',help=_Help.figerprint)
+def delete(figerprint):
+  if not figerprint:
+    figerprint = input('input figerprint:').strip().lower()
+    if not figerprint: return
+  
+  cfg_file = os.path.join(_data_dir,'config.json')
+  cfg = load_config(cfg_file)
+  accounts = cfg.get('accounts',{})
+  if figerprint not in accounts:
+    print('failed: can not find account (%s)!\n' % (figerprint,))
+    return
+  
+  accounts.pop(figerprint,None)
+  b = [(v['time'],k) for k,v in accounts.items()]
+  if b:
+    cfg['default'] = sorted(b)[-1][1]  # try shift to last created item
+  else: cfg['default'] = ''
+  save_cfg_file(cfg_file,cfg)
+  print('delete account (%s) successful.\n' % (figerprint,))
 
 if __name__ == '__main__':
   if sys.flags.interactive:
@@ -29,3 +156,5 @@ if __name__ == '__main__':
     except SystemExit: pass
   else:
     cmd_line()
+
+# usage: LOCAL_DIR='./data' python3 account.py --help

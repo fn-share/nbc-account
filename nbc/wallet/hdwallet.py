@@ -2,7 +2,7 @@
 # Copyright (C) 2018 Wayne Chan. Licensed under the Mozilla Public License,
 # Please refer to http://mozilla.org/MPL/2.0/
 
-import hashlib, hmac, traceback
+import hashlib, hmac, time, traceback
 from random import randint
 from binascii import hexlify, unhexlify
 
@@ -303,7 +303,7 @@ class HDWallet(object):
   
   def dump_to_cfg(self, passphrase='', cfg=None):
     cfg = cfg or {}
-    account = { 'encrypted': False, 'type': 'HD',
+    account = { 'time':int(time.time()), 'encrypted':False, 'type':'HD',
       'chain': self._chain.hex(),
       'vcn': self.vcn,   # can be None
       'testnet': self._testnet,
@@ -322,7 +322,7 @@ class HDWallet(object):
         account['encrypted'] = True
       
       account['prvkey'] = sPrv.hex()
-      account['pubkey'] = None
+      account['pubkey'] = self.publicKey().hex()
     elif self._pubkey:
       account['prvkey'] = None
       account['pubkey'] = point_compress(self._pubkey).hex()

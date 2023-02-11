@@ -2,7 +2,7 @@
 # Copyright (C) 2018 Wayne Chan. Licensed under the Mozilla Public License,
 # Please refer to http://mozilla.org/MPL/2.0/
 
-import traceback
+import time, traceback
 from random import randint
 
 from .. import util
@@ -228,13 +228,13 @@ class Address(object):
   
   def dump_to_cfg(self, passphrase='', cfg=None):
     cfg = cfg or {}
-    account = { 'encrypted': False, 'type': 'default',
+    account = { 'time':int(time.time()), 'encrypted':False, 'type':'default',
       'vcn': self._vcn,  # can be None
       'ver': self._ver.hex(),
-      'prvkey': None, 'pubkey': None,
+      'prvkey': None, 'pubkey': self.publicKey().hex(),
     }
     
-    privKey = self._priv_key; pubKey = self._pub_key
+    privKey = self._priv_key
     if privKey:
       assert(len(privKey) <= 255)
       privKey = (b'%02x' % len(privKey)) + privKey
@@ -244,8 +244,6 @@ class Address(object):
         account['encrypted'] = True
       
       account['prvkey'] = privKey.hex()
-    elif pubKey:
-      account['pubkey'] = pubKey.hex()
     
     fp = self.fingerprint().hex()
     accounts = cfg.get('accounts',None)
