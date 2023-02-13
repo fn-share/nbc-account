@@ -71,7 +71,7 @@ Commands:
   generate
   import
   list
-  setdefault
+  set
 ```
 
 用户可以进一步查取帮助，如 `python3 account.py generate --help`，`python3 account.py export --help` 等。
@@ -123,7 +123,7 @@ python3 account.py list --figerprint <figerprint> --ver nbc2
 指定 figerprint 将相应账号设为当前账号。
 
 ``` bash
-python3 account.py setdefault -fp <figerprint>
+python3 account.py set config.default <figerprint>
 ```
 
 4）导出账号

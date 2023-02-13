@@ -97,23 +97,28 @@ def save_cfg_file(cfg_file, cfg):
     s = json.dumps(cfg,indent=2)
     f.write(s)
 
-@cmd_line.command()
-@click.option('--figerprint','-fp',help=_Help.figerprint)
-def setdefault(figerprint):
-  if not figerprint:
-    figerprint = input('input figerprint:').strip().lower()
-    if not figerprint: return
-  
+@cmd_line.command(name='set')
+@click.argument('key_value',nargs=2)
+def account_set(key_value):
   cfg_file = os.path.join(_data_dir,'config.json')
   cfg = load_config(cfg_file)
-  accounts = cfg.get('accounts',{})
-  if figerprint not in accounts:
-    print('failed: can not find account (%s)!\n' % (figerprint,))
-    return
   
-  cfg['default'] = figerprint
-  save_cfg_file(cfg_file,cfg)
-  print('set default account (%s) successful.\n' % (figerprint,))
+  k,v = key_value
+  k = k.lower()
+  if k == 'config.default':
+    figerprint = v
+    
+    accounts = cfg.get('accounts',{})
+    if v not in accounts:
+      print('failed: can not find account (%s)!\n' % (v,))
+      return
+    
+    cfg['default'] = v
+    save_cfg_file(cfg_file,cfg)
+    print('set default account (%s) successful.\n' % (v,))
+  
+  else:
+    print('error: invalid key (%s)' % (k,))
 
 @cmd_line.command()
 @click.option('--seed',default='',help=_Help.seed)
