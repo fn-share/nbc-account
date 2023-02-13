@@ -22,6 +22,16 @@ A tool for NBC account management.
 
 &nbsp;
 
+## 关于 NBC 账号
+
+NBC 账号主体格式顺从比特币数字钱包的制式，改动很少。
+
+主要改进是增加了虚拟链号（Virtual Chain Number，vcn）指定，vcn 取值范围为 `0 ~ 65535`，适合用于描述 NBC 并行链中数字钱包的账号。vcn 取值对应于并行链的链号，我们将 vcn 取值融入到钱包地址格式中，便于转账发起后，系统能自动定位相关账号归属于哪条并行链，由相应并行链负责向外付款（即，兑付 UTXO）。
+
+本项目还展示了 vcn 用 `None` 值创建的账号，等效于 BTC 的账号格式，格式未变，而只有 vcn 取 `0~65535` 时创建的账号，才适用于 NBC 并行链，额外记录 vcn 信息。
+
+&nbsp;
+
 ## 命令行用法
 
 运行 `python3 account.py --help` 将打印如下信息：
@@ -101,17 +111,17 @@ python3 account.py export -fp <figerprint>
 python3 account.py export -fp <figerprint> --with_private
 ```
 
-导出数据是一串尾部带校验码的 base58 格式字串，其中只含公钥的账号字串以 `xpub` 开头，包含私钥的以 `xprv` 开头。 
+导出数据称为 keycode，是一串尾部带校验码的 base58 格式字串，只含公钥的账号字串以 `xpub` 开头，包含私钥的则以 `xprv` 开头。 
 
 5）导入账号
 
-将先前导出备份的账号（称为 keycode）导入进来，导入操作会创建新账号。
+将先前已由自己（或他人）导出的账号备份导入进来，导入操作将导致一个新账号创建。
 
 ``` bash
 python3 account.py import <keycode>
 ```
 
-导入账号或创建账号时，均可用 `--vcn` 指虚拟链号，如果缺省不指定，表示 vcn 取 None 值。本工具凡遇有账号新创建时，都自动将新账号置为当前 default 账号。
+导入或创建账号时，均可在命令行用 `--vcn` 指虚拟链号，如果缺省不指定，表示 vcn 取 None 值。本工具凡有账号新创建时，都自动将新建账号置为当前 default 账号。
 
 6）删除账号
 
@@ -121,16 +131,6 @@ python3 account.py import <keycode>
 python3 account.py delete -fp <figerprint>
 ```
 
-注意，此操作将丢失指定的账号，如有必要（比方这个账号还有用）请先用 export 导出一个备份。
-
-&nbsp;
-
-## 关于 NBC 账号
-
-NBC 账号主体格式顺从比特币数字钱包的制式，改动很少。
-
-主要改进是增加了虚拟链号（Virtual Chain Number，vcn）指定，vcn 取值范围为 `0 ~ 65535`，适合用于描述 NBC 并行链中数字钱包的账号。vcn 取值对应于并行链的链号，我们将 vcn 取值融入到钱包地址格式中，便于转账发起后，系统能自动定位相关账号归属于哪条并行链，由相应并行链负责向外付款（即，兑付 UTXO）。
-
-本项目还展示了 vcn 用 `None` 值创建的账号，等效于 BTC 的账号格式，格式未变，而只有 vcn 取 `0~65535` 时创建的账号，才适用于 NBC 并行链，额外记录 vcn 信息。
+注意，此操作会导致指定账号丢失，所以，如有必要，比方这个账号还有用，请先用 export 命令导出一个备份。
 
 &nbsp;
