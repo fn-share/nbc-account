@@ -107,7 +107,7 @@ def publickey_to_address(publickey, vcn=None, ver=b'\x00'):
   else:    # for NBC parallel chain
     return base58.encode_check(ver+_bytes(divmod(vcn&0xffff,256)) + pubHash)
 
-def publickey_to_prefix_addr(publickey, vcn=None, prefix=b''):
+def publickey_to_prefix_addr(publickey, vcn=None, prefix=''):
   if not isinstance(prefix,bytes):
     prefix = prefix.encode('utf-8')
   

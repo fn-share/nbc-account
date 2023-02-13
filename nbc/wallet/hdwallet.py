@@ -193,8 +193,13 @@ class HDWallet(object):
   
   def address(self, ver=None):  # only support compressed address
     if ver is None:
-      ver = b'\x00' if not self._testnet else b'\x6f'
-    return util.key.publickey_to_address(self.publicKey(),self.vcn,ver).decode('utf-8')
+      ver = b'\x00' if not self._testnet else b'\x6f'  # default take as bitcoin style
+    if isinstance(ver,bytes):   # ver is bytes
+      addr = util.key.publickey_to_address(self.publicKey(),self.vcn,ver)
+    else:                       # ver is string, by prefix style
+      assert isinstance(ver,str)
+      addr = util.key.publickey_to_prefix_addr(self.publicKey(),self.vcn,ver)
+    return addr.decode('utf-8')
   
   def publicKey(self):
     if self._comp_pubkey is None:

@@ -54,13 +54,13 @@ def account_list(figerprint, ver):
       pubkey = acc.get('pubkey','')
       pubkey2 = unhexlify(pubkey)
       
-      if not ver: ver = 'nbc0'
+      if not ver: ver = '0x00'
       if ver[:2].lower() == '0x':  # version style
         ver = unhexlify('%02x' % int(ver,16))
         addr = nbc_util.key.publickey_to_address(pubkey2,vcn,ver).decode('utf-8')
-      else:    # prefix style
+      else:    # by prefix style
         addr = nbc_util.key.publickey_to_prefix_addr(pubkey2,vcn,ver).decode('utf-8')
-      pubhash = nbc_util.key.publickey_to_hash(pubkey2)
+      pubhash = nbc_util.key.publickey_to_hash(pubkey2).hex()
       
       encrypted = 1 if acc.get('encrypted',False) else 0
       prvkey = acc.get('prvkey','')
@@ -72,7 +72,7 @@ def account_list(figerprint, ver):
       print('Private key: %s' % (prvkey,))
       print('Public key : %s' % (pubkey,))
       print('Address    : %s' % (addr,))
-      print('Pubkey hash: %s' % (pubhash.hex(),))
+      print('Pubkey hash: %s' % (pubhash,))
     else: print('Can not find account: %s' % (figerprint,))
     
     print()

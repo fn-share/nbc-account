@@ -21,8 +21,6 @@
 # THE SOFTWARE.
 
 
-import struct, hashlib
-
 from . import base58
 from . import ecc
 from . import key
@@ -30,33 +28,3 @@ from . import key
 from .hash import sha1, sha256, sha256d, ripemd160, hash160
 
 __all__ = [ 'base58', 'ecc', 'key', 'sha1', 'sha256', 'sha256d', 'ripemd160', 'hash160' ]
-
-#---- formatting helpers
-
-def publickey_hash(pub_key):
-    pubHash = hashlib.sha512(pub_key).digest()
-    s1 = hashlib.new('ripemd160',pubHash[:32]).digest()
-    s2 = hashlib.new('ripemd160',pubHash[32:]).digest()
-    return hashlib.sha256(s1+s2).digest()
-
-
-#---- block header helpers
-
-_struct_head1 = struct.Struct('<II32s32sIII')  # full header
-_struct_head2 = struct.Struct('<II32s32sII')   # header that excluding nonce
-
-def get_block_header(ver, chain_no, prev_block, merkle_root, timestamp, bits, nonce):  # total 84 bytes
-  return _struct_head1.pack(ver,chain_no,prev_block,merkle_root,timestamp,bits,nonce)
-
-def get_block_header2(ver, chain_no, prev_block, merkle_root, timestamp, bits):  # total 80 bytes
-  return _struct_head2.pack(ver,chain_no,prev_block,merkle_root,timestamp,bits)
-
-def get_merkle_root(txns):
-  branches = [t.hash for t in txns]
-  
-  while len(branches) > 1:
-    if (len(branches) % 2) == 1:
-      branches.append(branches[-1])
-    branches = [sha256d(a+b) for a,b in zip(branches[0::2],branches[1::2])]
-  
-  return branches[0]

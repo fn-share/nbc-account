@@ -18,7 +18,7 @@ A tool for NBC account management.
 5. 将指定账号导出，以便在其它机器中导入使用
 6. 导入账号
 
-本项目重用了 [ricmoo/pycoind](https://github.com/ricmoo/pycoind) 项目中 util 模块的代码，`ricmoo/pycoind` 以 MIT 许可证开源，对本项目我们继续采用 MIT 许可证开源。
+本项目重用了 [ricmoo/pycoind](https://github.com/ricmoo/pycoind) 项目中 util 模块的代码，`ricmoo/pycoind` 以 MIT 许可证开源，对本项目我们沿用 MIT 开源许可证。
 
 &nbsp;
 
@@ -51,7 +51,7 @@ base58_addr = prefix + base58.b58encode(pubHash + crc)
 python3 account.py --list -fp <figerprint> --ver nbc2
 ```
 
-可以得到诸如 `nbc2Lsf3qPNCegC9SCTpdwKXj5LkDys3jn4Mo` 格式的账号地址。而 `--ver` 传递 `0x00` 等 16 进制字串形式的参数时，表示以 BTC 原有的 version 前缀的格式表达。
+可以得到诸如 `nbc2Lsf3qPNCegC9SCTpdwKXj5LkDys3jn4Mo` 格式的账号地址。而 `--ver` 传递类似于 `0x00` 的 16 进制字串参数时，表示以 BTC 原有的 version 前缀格式描述地址。
 
 &nbsp;
 
