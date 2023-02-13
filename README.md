@@ -26,9 +26,32 @@ A tool for NBC account management.
 
 NBC 账号主体格式顺从比特币数字钱包的制式，改动很少。
 
-主要改进是增加了虚拟链号（Virtual Chain Number，vcn）指定，vcn 取值范围为 `0 ~ 65535`，适合用于描述 NBC 并行链中数字钱包的账号。vcn 取值对应于并行链的链号，我们将 vcn 取值融入到钱包地址格式中，便于转账发起后，系统能自动定位相关账号归属于哪条并行链，由相应并行链负责向外付款（即，兑付 UTXO）。
+第一项主要改进是，增加了虚拟链号（Virtual Chain Number，vcn）指定，vcn 取值范围为 `0 ~ 65535`，适合用于描述 NBC 并行链中数字钱包的账号。vcn 取值对应于并行链的链号，我们将 vcn 取值融入到钱包地址格式中，便于转账发起后，系统能自动定位相关账号归属于哪条并行链，由相应并行链负责向外付款（即，兑付 UTXO）。
 
 本项目还展示了 vcn 用 `None` 值创建的账号，等效于 BTC 的账号格式，格式未变，而只有 vcn 取 `0~65535` 时创建的账号，才适用于 NBC 并行链，额外记录 vcn 信息。
+
+第二项主要改进是，账号表成可读地址（即 base58 格式的地址）时，可选按 prefix 格式描述，原有 BTC 采取的方式我们称为 version 格式，它按如下方式推导可读地址：
+
+``` python
+pubHash = hashlib.new('ripemd160',sha256(publickey).digest())
+base58_addr = base58.encode_check(ver + pubHash.digest())
+```
+
+而 prefix 按如下方式推导地址：
+
+``` python
+pubHash = hashlib.new('ripemd160',sha256(publickey).digest())
+crc = sha256(sha256(prefix + pubHash).digest()).digest()[:4]
+base58_addr = prefix + base58.b58encode(pubHash + crc)
+```
+
+这项改进便于让账号以 `nbc0` 前缀的地址形式表达，比方运行：
+
+``` bash
+python3 account.py --list -fp <figerprint> --ver nbc2
+```
+
+可以得到诸如 `nbc2Lsf3qPNCegC9SCTpdwKXj5LkDys3jn4Mo` 格式的账号地址。而 `--ver` 传递 `0x00` 等 16 进制字串形式的参数时，表示以 BTC 原有的 version 前缀的格式表达。
 
 &nbsp;
 
@@ -88,6 +111,12 @@ python3 account.py list --figerprint <figerprint>
 ```
 
 说明，`--figerprint` 也可简写为 `-fp` 。
+
+或者增加用 `--ver` 指定地址前缀：
+
+``` bash
+python3 account.py list --figerprint <figerprint> --ver nbc2
+```
 
 3）设置缺省账号
 

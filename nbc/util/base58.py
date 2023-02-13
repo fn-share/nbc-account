@@ -40,7 +40,7 @@ else:  # python3
     lambda s: s.buffer )
 
 def scrub_input(v):
-  if isinstance(v,str) and not isinstance(v,bytes):
+  if not isinstance(v,bytes):
     v = v.encode('ascii')
   if not isinstance(v,bytes):
     raise TypeError("a bytes-like object is required, not '%s'" % type(v).__name__)

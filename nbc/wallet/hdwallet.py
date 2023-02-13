@@ -194,7 +194,7 @@ class HDWallet(object):
   def address(self, ver=None):  # only support compressed address
     if ver is None:
       ver = b'\x00' if not self._testnet else b'\x6f'
-    return util.key.publickey_to_address(self.publicKey(),self.vcn,ver)
+    return util.key.publickey_to_address(self.publicKey(),self.vcn,ver).decode('utf-8')
   
   def publicKey(self):
     if self._comp_pubkey is None:

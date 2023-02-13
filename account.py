@@ -20,6 +20,7 @@ from binascii import hexlify, unhexlify
 
 class _Help:
   figerprint = 'figerprint of account'
+  version    = "account version, default is '0x00'"
   seed       = 'seed string to generate account, use random value if absent'
   vcn        = 'virtual chain number, 0~65535 or None when absent'
   password   = 'password for the account'
@@ -37,7 +38,8 @@ def cmd_line():
 
 @cmd_line.command(name='list')
 @click.option('--figerprint','-fp',default='',help=_Help.figerprint)
-def account_list(figerprint):
+@click.option('--ver',default='',help=_Help.version)
+def account_list(figerprint, ver):
   cfg_file = os.path.join(_data_dir,'config.json')
   cfg = load_config(cfg_file)
   accounts = cfg.get('accounts',{})
@@ -48,16 +50,29 @@ def account_list(figerprint):
   if figerprint:   # only list one account
     acc = accounts.get(figerprint)
     if acc:
-      encrypted = 1 if acc.get('encrypted',False) else 0
+      vcn = acc.get('vcn',None)
       pubkey = acc.get('pubkey','')
+      pubkey2 = unhexlify(pubkey)
+      
+      if not ver: ver = 'nbc0'
+      if ver[:2].lower() == '0x':  # version style
+        ver = unhexlify('%02x' % int(ver,16))
+        addr = nbc_util.key.publickey_to_address(pubkey2,vcn,ver).decode('utf-8')
+      else:    # prefix style
+        addr = nbc_util.key.publickey_to_prefix_addr(pubkey2,vcn,ver).decode('utf-8')
+      pubhash = nbc_util.key.publickey_to_hash(pubkey2)
+      
+      encrypted = 1 if acc.get('encrypted',False) else 0
       prvkey = acc.get('prvkey','')
       prvkey = '****' if prvkey else 'none'
       
       print('Figerprint : %s' % (figerprint,))
-      print('VCN        : %s' % (acc.get('vcn',None),))
+      print('VCN        : %s' % (vcn,))
       print('Encrypted  : %s' % (encrypted,))
       print('Private key: %s' % (prvkey,))
       print('Public key : %s' % (pubkey,))
+      print('Address    : %s' % (addr,))
+      print('Pubkey hash: %s' % (pubhash.hex(),))
     else: print('Can not find account: %s' % (figerprint,))
     
     print()
@@ -191,8 +206,12 @@ def account_export(figerprint, with_private, password):
 @click.option('--vcn',type=click.INT,default=65536,help=_Help.vcn)
 @click.argument('keycode',nargs=1)
 def account_import(password, vcn, keycode):
-  if password is None:
-    password = getpass.getpass('input password:')
+  if keycode[:4] not in ('xpub','xprv'):
+    print('error: invalid keycode!')
+    return
+  
+  if password is None and keycode[:4] == 'xprv':
+    password = getpass.getpass('input password (empty for no protecting):')
     if password:
       password2 = getpass.getpass('input again:')
       if password != password2:

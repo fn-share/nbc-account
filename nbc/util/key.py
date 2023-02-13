@@ -21,14 +21,15 @@
 # THE SOFTWARE.
 
 
+import hashlib
+from hashlib import sha256
+
 from . import base58
 
 from .ecdsa.ecdsa import point_is_valid
 from .ecdsa import SECP256k1 as curve
 from .ecdsa.numbertheory import square_root_mod_prime
 from .ecdsa.util import number_to_string, string_to_number
-
-import hashlib
 
 __all__ = [ 'compress_public_key', 'decompress_public_key',
   'privkey_to_wif', 'privkey_from_wif',
@@ -100,25 +101,25 @@ def privkey_from_wif(privkey, prefix = b'\x80'):
   raise ValueError('invalid wif private key')
 
 def publickey_to_address(publickey, vcn=None, ver=b'\x00'):
+  pubHash = hashlib.new('ripemd160',sha256(publickey).digest())
   if vcn is None:   # for bitcoin style
-    pubHash = hashlib.new('ripemd160',hashlib.sha256(publickey).digest())
     return base58.encode_check(ver + pubHash.digest())
-  else:  # for NBC parallel chain
-    pubHash = hashlib.sha512(publickey).digest()
-    s1 = hashlib.new('ripemd160',pubHash[:32]).digest()
-    s2 = hashlib.new('ripemd160',pubHash[32:]).digest()
-    hi,lo = divmod(vcn & 0xffff,256)
-    return base58.encode_check(ver+_bytes((lo,hi)) + hashlib.sha256(s1+s2).digest())
-
-def publickey_to_hash(publickey, vcn=None):
-  if vcn is None:   # for bitcoin style
-    pubHash = hashlib.new('ripemd160',hashlib.sha256(publickey).digest())
-    return pubHash.digest()
   else:    # for NBC parallel chain
-    pubHash = hashlib.sha512(publickey).digest()
-    s1 = hashlib.new('ripemd160',pubHash[:32]).digest()
-    s2 = hashlib.new('ripemd160',pubHash[32:]).digest()
-    return hashlib.sha256(s1+s2).digest()
+    return base58.encode_check(ver+_bytes(divmod(vcn&0xffff,256)) + pubHash)
+
+def publickey_to_prefix_addr(publickey, vcn=None, prefix=b''):
+  if not isinstance(prefix,bytes):
+    prefix = prefix.encode('utf-8')
+  
+  pubHash = hashlib.new('ripemd160',sha256(publickey).digest()).digest()
+  if vcn is None:   # for bitcoin style
+    pubHash2 = pubHash
+  else: pubHash2 = _bytes(divmod(vcn & 0xffff,256)) + pubHash
+  crc = sha256(sha256(prefix + pubHash2).digest()).digest()[:4]
+  return prefix + base58.b58encode(pubHash2 + crc)
+
+def publickey_to_hash(publickey):
+  return hashlib.new('ripemd160',sha256(publickey).digest()).digest()
 
 def publichash_to_address(publichash, vcn=None, ver=b'\x00'):
   if vcn is None:
