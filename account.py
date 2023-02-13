@@ -106,7 +106,7 @@ def setdefault(figerprint):
 @click.option('--vcn',type=click.INT,default=65536,help=_Help.vcn)
 def generate(seed, password, vcn):
   if password is None:
-    password = getpass.getpass('input password:')
+    password = getpass.getpass('input password (empty for no protecting):')
     if password:
       password2 = getpass.getpass('input again:')
       if password != password2:

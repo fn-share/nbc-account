@@ -47,6 +47,84 @@ Commands:
 
 &nbsp;
 
+## 常用命令
+
+1）创建一个账号
+
+``` bash
+python3 account.py generate --seed "secret words"
+```
+
+运行中系统提示输入 password，以便用它加密私钥后保存，如果输入 password 为空字串，表示存盘时不加密。
+
+seed 为创建账号所用的脑词，用户需妥善管理，不要告诉他人，这个脑词在恢复账号时有用。
+
+或者，如果不指定 seed 参数，系统将为马上要创建的账号随机生成一个私钥：
+
+``` bash
+python3 account.py generate
+```
+
+2）列举账号
+
+``` bash
+python3 account.py list
+```
+
+或者指定账号指纹查询详情。
+
+``` bash
+python3 account.py list --figerprint <figerprint>
+```
+
+说明，`--figerprint` 也可简写为 `-fp` 。
+
+3）设置缺省账号
+
+指定 figerprint 将相应账号设为当前账号。
+
+``` bash
+python3 account.py setdefault -fp <figerprint>
+```
+
+4）导出账号
+
+导出指定 figerprint 账号，只含公钥。
+
+``` bash
+python3 account.py export -fp <figerprint>
+```
+
+导出指定 figerprint 账号，除了公钥还包含私钥。
+
+``` bash
+python3 account.py export -fp <figerprint> --with_private
+```
+
+导出数据是一串尾部带校验码的 base58 格式字串，其中只含公钥的账号字串以 `xpub` 开头，包含私钥的以 `xprv` 开头。 
+
+5）导入账号
+
+将先前导出备份的账号（称为 keycode）导入进来，导入操作会创建新账号。
+
+``` bash
+python3 account.py import <keycode>
+```
+
+导入账号或创建账号时，均可用 `--vcn` 指虚拟链号，如果缺省不指定，表示 vcn 取 None 值。本工具凡遇有账号新创建时，都自动将新账号置为当前 default 账号。
+
+6）删除账号
+
+删除指定 figerprint 账号。
+
+``` bash
+python3 account.py delete -fp <figerprint>
+```
+
+注意，此操作将丢失指定的账号，如有必要（比方这个账号还有用）请先用 export 导出一个备份。
+
+&nbsp;
+
 ## 关于 NBC 账号
 
 NBC 账号主体格式顺从比特币数字钱包的制式，改动很少。
