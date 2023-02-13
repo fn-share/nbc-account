@@ -1,8 +1,8 @@
-# root/base36.py
+# base36.py
 
 from hashlib import sha256
 
-__all__ = ['decode_check', 'encode_check']
+__all__ = ['b36encode', 'b36decode', 'encode_check', 'decode_check']
 
 # 36 character alphabet, it suites for domain expression
 alphabet = b'0123456789abcdefghijklmnopqrstuvwxyz'
@@ -20,7 +20,7 @@ else:  # python3
     lambda s: s.buffer )
 
 def scrub_input(v):
-  if isinstance(v,str) and not isinstance(v,bytes):
+  if not isinstance(v,bytes):
     v = v.encode('ascii')
   if not isinstance(v,bytes):
     raise TypeError("a bytes-like object is required, not '%s'" % type(v).__name__)
