@@ -71,10 +71,9 @@ def _sigdecode(s, order):
   return (int(hexlify(s[:32]),16),int(hexlify(s[32:]),16))
 
 class Address(object):
-  def __init__(self, pub_key=None, priv_key=None, vcn=0, coin_type=b'\x00', ver=b'\x00'):
+  def __init__(self, pub_key=None, priv_key=None, vcn=None, ver=b'\x00'):
     self._compressed = False
     self._priv_key = priv_key
-    self._coin_type = coin_type
     self._ver = ver  # in BTC, ver can be b'\x00'~b'\xff', b'\x6f' for testnet
     
     if priv_key:
@@ -127,7 +126,6 @@ class Address(object):
   pub_key  = property(lambda s: s._pub_key)
   priv_key = property(lambda s: s._priv_key)
   vcn      = property(lambda s: s._vcn)         # vcn can be None
-  coin_type  = property(lambda s: s._coin_type)
   compressed = property(lambda s: s._compressed)
   
   def address(self):
@@ -150,7 +148,7 @@ class Address(object):
     return hash160(self.publicKey())[:4]
   
   @staticmethod
-  def generate(vcn=None, coin_type=b'\x00', ver=b'\x00', compressed=True): # suggest only using compressed address
+  def generate(vcn=None, ver=b'\x00', compressed=True): # suggest only using compressed address
     'Generate a new random address.'
     secexp = randrange(curve.order)              # return: 1 <= k < order
     key = number_to_string(secexp,curve.order)   # get 32 bytes number

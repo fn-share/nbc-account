@@ -101,9 +101,9 @@ def privkey_from_wif(privkey, prefix = b'\x80'):
   raise ValueError('invalid wif private key')
 
 def publickey_to_address(publickey, vcn=None, ver=b'\x00'):
-  pubHash = hashlib.new('ripemd160',sha256(publickey).digest())
+  pubHash = hashlib.new('ripemd160',sha256(publickey).digest()).digest()
   if vcn is None:   # for bitcoin style
-    return base58.encode_check(ver + pubHash.digest())
+    return base58.encode_check(ver + pubHash)
   else:    # for NBC parallel chain
     return base58.encode_check(ver+_bytes(divmod(vcn&0xffff,256)) + pubHash)
 
